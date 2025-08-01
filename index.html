@@ -63,7 +63,7 @@
   </div>
 
   <script>
-    const API_URL = "https://us-central1-kanawat-cyper.cloudfunctions.net/scanURL";
+    const API_URL = "https://us-central1-سري.cloudfunctions.net/scanURL";
 
     async function scanURL() {
       const url = document.getElementById("urlInput").value.trim();
@@ -75,57 +75,65 @@
 
       resultDiv.innerText = "⏳ جاري إرسال الرابط للفحص...";
 
-      // خطوة 1: إرسال الرابط ومعرفة scanId
-      const postResp = await fetch(`${API_URL}?url=${encodeURIComponent(url)}`);
-      const postText = await postResp.text();
-      if (!postResp.ok) {
-        resultDiv.innerText = "❌ خطأ من الخادم: " + postText;
-        return;
-      }
-      let postData;
-      try { postData = JSON.parse(postText); }
-      catch {
-        resultDiv.innerText = "❌ استجابة غير متوقعة: " + postText;
-        return;
-      }
-      const scanId = postData.data?.id || postData.data?.attributes?.id;
-      if (!scanId) {
-        resultDiv.innerText = "❌ لم يتم الحصول على Scan ID.";
-        return;
-      }
+      let scanId;
 
-      resultDiv.innerText = `⏳ الفحص قيد المعالجة (ID: ${scanId})\nالرجاء الانتظار...`;
-
-      // وظيفة polling لجلب النتيجة حتى اكتمالها
-      async function fetchResult() {
-        const getResp = await fetch(`${API_URL}/analyses/${scanId}`);
-        const raw = await getResp.text();
-        if (!getResp.ok) {
-          resultDiv.innerText = "❌ خطأ عند جلب النتيجة: " + raw;
+      try {
+        // إرسال الرابط للحصول على Scan ID
+        const submitResp = await fetch(`${API_URL}?url=${encodeURIComponent(url)}`);
+        const submitText = await submitResp.text();
+        if (!submitResp.ok) {
+          resultDiv.innerText = "❌ خطأ أثناء الإرسال: " + submitText;
           return;
         }
-        let data;
-        try { data = JSON.parse(raw); }
-        catch {
-          resultDiv.innerText = "❌ استجابة غير صالحة: " + raw;
+
+        const submitData = JSON.parse(submitText);
+        scanId = submitData.data?.id;
+        if (!scanId) {
+          resultDiv.innerText = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
           return;
         }
-        const status = data.data.attributes.status;
-        if (status !== 'completed') {
-          resultDiv.innerText = `⏳ جاري التحليل... (الحالة: ${status})`;
-          setTimeout(fetchResult, 2000);
-        } else {
-          const stats = data.data.attributes.stats;
-          resultDiv.innerHTML = `
-            ✅ <b>آمن:</b> ${stats.harmless}<br>
-            ⚠️ <b>مشبوه:</b> ${stats.suspicious}<br>
-            ❌ <b>خطر:</b> ${stats.malicious}<br>
-          `;
+
+        resultDiv.innerText = `✅ تم إرسال الرابط للفحص.\n🕒 معرف الفحص: ${scanId}\nيرجى الانتظار...`;
+
+      } catch (err) {
+        resultDiv.innerText = "❌ خطأ أثناء الإرسال: " + err.message;
+        return;
+      }
+
+      // تابع مراقبة التحليل
+      async function pollResult(attempt = 1) {
+        try {
+          const analysisResp = await fetch(`${API_URL}/analyses/${scanId}`);
+          const raw = await analysisResp.text();
+          if (!analysisResp.ok) {
+            resultDiv.innerText = `❌ خطأ أثناء جلب النتيجة: ${raw}`;
+            return;
+          }
+
+          const analysisData = JSON.parse(raw);
+          const status = analysisData.data?.attributes?.status;
+
+          if (status === "completed") {
+            const stats = analysisData.data.attributes.stats;
+            resultDiv.innerHTML = `
+              ✅ <b>آمن:</b> ${stats.harmless}<br>
+              ⚠️ <b>مشبوه:</b> ${stats.suspicious}<br>
+              ❌ <b>خطر:</b> ${stats.malicious}<br>
+            `;
+          } else if (status === "queued" || status === "in-progress") {
+            resultDiv.innerText = `⌛ الفحص لم يكتمل بعد (${status})...\nمحاولة رقم ${attempt}`;
+            setTimeout(() => pollResult(attempt + 1), 3000);
+          } else {
+            resultDiv.innerText = `⚠️ حالة غير معروفة: ${status}`;
+          }
+
+        } catch (err) {
+          resultDiv.innerText = "❌ خطأ أثناء التحليل: " + err.message;
         }
       }
 
-      // ابدأ جلب النتائج بعد ثانية واحدة
-      setTimeout(fetchResult, 1000);
+      // ابدأ الاستعلام عن النتيجة بعد تأخير قصير
+      setTimeout(() => pollResult(), 3000);
     }
   </script>
 </body>

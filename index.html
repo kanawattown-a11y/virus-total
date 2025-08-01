@@ -51,6 +51,21 @@
       border-radius: 6px;
       background: #fff5f5;
       white-space: pre-wrap;
+      position: relative;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      border-left-color: #c31432;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -68,12 +83,25 @@
     async function scanURL() {
       const url = document.getElementById("urlInput").value.trim();
       const resultDiv = document.getElementById("result");
+      const scanButton = document.querySelector("button");
+      const urlRegex = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/;
+
+      scanButton.disabled = true;
+      resultDiv.innerHTML = ""; // Clear previous results
+
       if (!url) {
         resultDiv.innerText = "يرجى إدخال رابط أولاً.";
+        scanButton.disabled = false;
         return;
       }
 
-      resultDiv.innerText = "⏳ جاري إرسال الرابط للفحص...";
+      if (!urlRegex.test(url)) {
+        resultDiv.innerText = "❌ يرجى إدخال رابط صحيح (مثل https://example.com).";
+        scanButton.disabled = false;
+        return;
+      }
+
+      resultDiv.innerHTML = "<span class=\"spinner\"></span> ⏳ جاري إرسال الرابط للفحص...";
 
       let scanId;
 
@@ -82,21 +110,25 @@
         const submitResp = await fetch(`${API_URL}?url=${encodeURIComponent(url)}`);
         const submitText = await submitResp.text();
         if (!submitResp.ok) {
-          resultDiv.innerText = "❌ خطأ أثناء الإرسال: " + submitText;
+          const errorData = JSON.parse(submitText);
+          resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${errorData.details?.error?.message || submitText}`;
+          scanButton.disabled = false;
           return;
         }
 
         const submitData = JSON.parse(submitText);
         scanId = submitData.data?.id;
         if (!scanId) {
-          resultDiv.innerText = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
+          resultDiv.innerHTML = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
+          scanButton.disabled = false;
           return;
         }
 
-        resultDiv.innerText = `✅ تم إرسال الرابط للفحص.\n🕒 معرف الفحص: ${scanId}\nيرجى الانتظار...`;
+        resultDiv.innerHTML = `<span class=\"spinner\"></span> ✅ تم إرسال الرابط للفحص.<br>🕒 معرف الفحص: ${scanId}<br>يرجى الانتظار...`;
 
       } catch (err) {
-        resultDiv.innerText = "❌ خطأ أثناء الإرسال: " + err.message;
+        resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${err.message}`;
+        scanButton.disabled = false;
         return;
       }
 
@@ -106,7 +138,9 @@
           const analysisResp = await fetch(`${API_URL}?url=${encodeURIComponent(scanId)}`);
           const raw = await analysisResp.text();
           if (!analysisResp.ok) {
-            resultDiv.innerText = `❌ خطأ أثناء جلب النتيجة: ${raw}`;
+            const errorData = JSON.parse(raw);
+            resultDiv.innerHTML = `❌ خطأ أثناء جلب النتيجة: ${errorData.details?.error?.message || raw}`;
+            scanButton.disabled = false;
             return;
           }
 
@@ -120,15 +154,18 @@
               ⚠️ <b>مشبوه:</b> ${stats.suspicious}<br>
               ❌ <b>خطر:</b> ${stats.malicious}<br>
             `;
+            scanButton.disabled = false;
           } else if (status === "queued" || status === "in-progress") {
-            resultDiv.innerText = `⌛ الفحص لم يكتمل بعد (${status})...\nمحاولة رقم ${attempt}`;
+            resultDiv.innerHTML = `<span class=\"spinner\"></span> ⌛ الفحص لم يكتمل بعد (${status})...<br>محاولة رقم ${attempt}`;
             setTimeout(() => pollResult(attempt + 1), 3000);
           } else {
-            resultDiv.innerText = `⚠️ حالة غير معروفة: ${status}`;
+            resultDiv.innerHTML = `⚠️ حالة غير معروفة: ${status}`;
+            scanButton.disabled = false;
           }
 
         } catch (err) {
-          resultDiv.innerText = "❌ خطأ أثناء التحليل: " + err.message;
+          resultDiv.innerHTML = `❌ خطأ أثناء التحليل: ${err.message}`;
+          scanButton.disabled = false;
         }
       }
 

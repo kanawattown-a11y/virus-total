@@ -9,13 +9,12 @@
       font-family: 'Segoe UI', sans-serif;
       background: #fff;
       color: #333;
-      margin: 0; /* Changed from padding to margin: 0 */
+      padding: 20px;
       direction: rtl;
-      overflow: hidden; /* Hide body scrollbar */
     }
     .container {
       max-width: 500px;
-      margin: 0 auto; /* Adjusted margin */
+      margin: auto;
       border: 2px solid #c31432;
       border-radius: 10px;
       padding: 20px;
@@ -68,48 +67,6 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    .explanation-container {
-      max-width: 500px;
-      margin: 20px auto; /* Adjusted margin */
-      border: 2px solid #c31432;
-      border-radius: 10px;
-      padding: 20px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h3 {
-      color: #c31432;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .result-type {
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-    }
-    .result-type.safe {
-      background: #e6ffe6; /* Light green */
-      border: 1px solid #4CAF50; /* Green */
-    }
-    .result-type.suspicious {
-      background: #fffbe6; /* Light yellow */
-      border: 1px solid #FFC107; /* Yellow */
-    }
-    .result-type.dangerous {
-      background: #ffe6e6; /* Light red */
-      border: 1px solid #c31432; /* Red from original design */
-    }
-    .result-type span {
-      font-weight: bold;
-      margin-left: 10px;
-      font-size: 18px;
-    }
-    .result-type p {
-      margin: 0;
-      font-size: 14px;
-      color: #555;
-    }
   </style>
 </head>
 <body>
@@ -118,22 +75,6 @@
     <input type="text" id="urlInput" placeholder="https://example.com" />
     <button onclick="scanURL()">فحص الرابط</button>
     <div id="result">👆 أدخل الرابط واضغط فحص</div>
-  </div>
-
-  <div class="explanation-container">
-    <h3>شرح أنواع نتائج الفحص</h3>
-    <div class="result-type safe">
-      <span>✅ آمن:</span>
-      <p>يشير إلى أن الرابط تم فحصه ولم يتم العثور على أي تهديدات أو محتوى ضار. يمكن تصفحه بأمان.</p>
-    </div>
-    <div class="result-type suspicious">
-      <span>⚠️ مشبوه:</span>
-      <p>يشير إلى أن الرابط قد يحتوي على عناصر مشبوهة أو غير مؤكدة، وقد يتطلب الحذر عند التعامل معه. قد لا يكون ضارًا بشكل مباشر ولكنه يستدعي الانتباه.</p>
-    </div>
-    <div class="result-type dangerous">
-      <span>❌ خطر:</span>
-      <p>يشير إلى أن الرابط يحتوي على تهديدات مؤكدة مثل البرمجيات الخبيثة، التصيد الاحتيالي، أو محتوى غير آمن. يوصى بشدة بتجنب فتح هذا الرابط.</p>
-    </div>
   </div>
 
   <script>
@@ -151,19 +92,16 @@
       if (!url) {
         resultDiv.innerText = "يرجى إدخال رابط أولاً.";
         scanButton.disabled = false;
-        sendHeightToParent(); // Update height after content change
         return;
       }
 
       if (!urlRegex.test(url)) {
         resultDiv.innerText = "❌ يرجى إدخال رابط صحيح (مثل https://example.com).";
         scanButton.disabled = false;
-        sendHeightToParent(); // Update height after content change
         return;
       }
 
       resultDiv.innerHTML = "<span class=\"spinner\"></span> ⏳ جاري إرسال الرابط للفحص...";
-      sendHeightToParent(); // Update height after content change
 
       let scanId;
 
@@ -175,7 +113,6 @@
           const errorData = JSON.parse(submitText);
           resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${errorData.details?.error?.message || submitText}`;
           scanButton.disabled = false;
-          sendHeightToParent(); // Update height after content change
           return;
         }
 
@@ -184,17 +121,14 @@
         if (!scanId) {
           resultDiv.innerHTML = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
           scanButton.disabled = false;
-          sendHeightToParent(); // Update height after content change
           return;
         }
 
         resultDiv.innerHTML = `<span class=\"spinner\"></span> ✅ تم إرسال الرابط للفحص.<br>🕒 معرف الفحص: ${scanId}<br>يرجى الانتظار...`;
-        sendHeightToParent(); // Update height after content change
 
       } catch (err) {
         resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${err.message}`;
         scanButton.disabled = false;
-        sendHeightToParent(); // Update height after content change
         return;
       }
 
@@ -207,7 +141,6 @@
             const errorData = JSON.parse(raw);
             resultDiv.innerHTML = `❌ خطأ أثناء جلب النتيجة: ${errorData.details?.error?.message || raw}`;
             scanButton.disabled = false;
-            sendHeightToParent(); // Update height after content change
             return;
           }
 
@@ -222,44 +155,23 @@
               ❌ <b>خطر:</b> ${stats.malicious}<br>
             `;
             scanButton.disabled = false;
-            sendHeightToParent(); // Update height after content change
           } else if (status === "queued" || status === "in-progress") {
             resultDiv.innerHTML = `<span class=\"spinner\"></span> ⌛ الفحص لم يكتمل بعد (${status})...<br>محاولة رقم ${attempt}`;
-            sendHeightToParent(); // Update height after content change
             setTimeout(() => pollResult(attempt + 1), 3000);
           } else {
             resultDiv.innerHTML = `⚠️ حالة غير معروفة: ${status}`;
             scanButton.disabled = false;
-            sendHeightToParent(); // Update height after content change
           }
 
         } catch (err) {
           resultDiv.innerHTML = `❌ خطأ أثناء التحليل: ${err.message}`;
           scanButton.disabled = false;
-          sendHeightToParent(); // Update height after content change
         }
       }
 
       // ابدأ الاستعلام عن النتيجة بعد تأخير قصير
       setTimeout(() => pollResult(), 3000);
     }
-
-    // Function to send height to parent for iframe resizing
-    function sendHeightToParent() {
-      // Use document.documentElement.scrollHeight for a more reliable height, considering padding and margins
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ frameHeight: height }, '*');
-    }
-
-    // Send height on load and whenever content might change
-    window.addEventListener('load', sendHeightToParent);
-    window.addEventListener('resize', sendHeightToParent);
-    // Use a MutationObserver to detect changes in the DOM and update height
-    const observer = new MutationObserver(sendHeightToParent);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-
-    // Also, ensure height is sent after any dynamic content updates within the scanURL function
-
   </script>
 </body>
 </html>

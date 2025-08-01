@@ -9,12 +9,13 @@
       font-family: 'Segoe UI', sans-serif;
       background: #fff;
       color: #333;
-      padding: 20px;
+      margin: 0; /* Changed from padding to margin: 0 */
       direction: rtl;
+      overflow: hidden; /* Hide body scrollbar */
     }
     .container {
       max-width: 500px;
-      margin: auto;
+      margin: 0 auto; /* Adjusted margin */
       border: 2px solid #c31432;
       border-radius: 10px;
       padding: 20px;
@@ -67,6 +68,48 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    .explanation-container {
+      max-width: 500px;
+      margin: 20px auto; /* Adjusted margin */
+      border: 2px solid #c31432;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h3 {
+      color: #c31432;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .result-type {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+    }
+    .result-type.safe {
+      background: #e6ffe6; /* Light green */
+      border: 1px solid #4CAF50; /* Green */
+    }
+    .result-type.suspicious {
+      background: #fffbe6; /* Light yellow */
+      border: 1px solid #FFC107; /* Yellow */
+    }
+    .result-type.dangerous {
+      background: #ffe6e6; /* Light red */
+      border: 1px solid #c31432; /* Red from original design */
+    }
+    .result-type span {
+      font-weight: bold;
+      margin-left: 10px;
+      font-size: 18px;
+    }
+    .result-type p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -75,6 +118,22 @@
     <input type="text" id="urlInput" placeholder="https://example.com" />
     <button onclick="scanURL()">فحص الرابط</button>
     <div id="result">👆 أدخل الرابط واضغط فحص</div>
+  </div>
+
+  <div class="explanation-container">
+    <h3>شرح أنواع نتائج الفحص</h3>
+    <div class="result-type safe">
+      <span>✅ آمن:</span>
+      <p>يشير إلى أن الرابط تم فحصه ولم يتم العثور على أي تهديدات أو محتوى ضار. يمكن تصفحه بأمان.</p>
+    </div>
+    <div class="result-type suspicious">
+      <span>⚠️ مشبوه:</span>
+      <p>يشير إلى أن الرابط قد يحتوي على عناصر مشبوهة أو غير مؤكدة، وقد يتطلب الحذر عند التعامل معه. قد لا يكون ضارًا بشكل مباشر ولكنه يستدعي الانتباه.</p>
+    </div>
+    <div class="result-type dangerous">
+      <span>❌ خطر:</span>
+      <p>يشير إلى أن الرابط يحتوي على تهديدات مؤكدة مثل البرمجيات الخبيثة، التصيد الاحتيالي، أو محتوى غير آمن. يوصى بشدة بتجنب فتح هذا الرابط.</p>
+    </div>
   </div>
 
   <script>
@@ -172,6 +231,21 @@
       // ابدأ الاستعلام عن النتيجة بعد تأخير قصير
       setTimeout(() => pollResult(), 3000);
     }
+
+    // Function to send height to parent for iframe resizing
+    function sendHeightToParent() {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ frameHeight: height }, '*');
+    }
+
+    // Send height on load and whenever content might change
+    window.addEventListener('load', sendHeightToParent);
+    window.addEventListener('resize', sendHeightToParent);
+    // You might need to call sendHeightToParent after dynamic content changes, e.g., after scan results are displayed
+    const observer = new MutationObserver(sendHeightToParent);
+    observer.observe(document.body, { childList: true, subtree: true });
+
   </script>
 </body>
 </html>
+

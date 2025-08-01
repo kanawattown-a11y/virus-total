@@ -9,12 +9,13 @@
       font-family: 'Segoe UI', sans-serif;
       background: #fff;
       color: #333;
-      padding: 20px;
+      margin: 0; /* Changed from padding to margin: 0 */
       direction: rtl;
+      overflow: hidden; /* Hide body scrollbar */
     }
     .container {
       max-width: 500px;
-      margin: auto;
+      margin: 0 auto; /* Adjusted margin */
       border: 2px solid #c31432;
       border-radius: 10px;
       padding: 20px;
@@ -69,7 +70,7 @@
     }
     .explanation-container {
       max-width: 500px;
-      margin: 20px auto;
+      margin: 20px auto; /* Adjusted margin */
       border: 2px solid #c31432;
       border-radius: 10px;
       padding: 20px;
@@ -230,6 +231,21 @@
       // ابدأ الاستعلام عن النتيجة بعد تأخير قصير
       setTimeout(() => pollResult(), 3000);
     }
+
+    // Function to send height to parent for iframe resizing
+    function sendHeightToParent() {
+      const height = document.body.scrollHeight;
+      window.parent.postMessage({ frameHeight: height }, '*');
+    }
+
+    // Send height on load and whenever content might change
+    window.addEventListener('load', sendHeightToParent);
+    window.addEventListener('resize', sendHeightToParent);
+    // You might need to call sendHeightToParent after dynamic content changes, e.g., after scan results are displayed
+    const observer = new MutationObserver(sendHeightToParent);
+    observer.observe(document.body, { childList: true, subtree: true });
+
   </script>
 </body>
 </html>
+

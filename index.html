@@ -103,7 +103,7 @@
       // تابع مراقبة التحليل
       async function pollResult(attempt = 1) {
         try {
-          const analysisResp = await fetch(`${API_URL}/analyses/${scanId}`);
+          const analysisResp = await fetch(`${API_URL}?url=${encodeURIComponent(scanId)}`);
           const raw = await analysisResp.text();
           if (!analysisResp.ok) {
             resultDiv.innerText = `❌ خطأ أثناء جلب النتيجة: ${raw}`;

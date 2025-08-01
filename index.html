@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>أداة فحص الروابط - VirusTotal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #333;
+      padding: 20px;
+      direction: rtl;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      border: 2px solid #c31432;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #c31432;
+      text-align: center;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+      border-radius: 6px;
+      direction: ltr;
+    }
+
+    button {
+      background: #c31432;
+      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      width: 100%;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 16px;
+      padding: 10px;
+      border: 1px dashed #c31432;
+      border-radius: 6px;
+      background: #fff5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔍 فحص رابط بفيروس توتال</h2>
+    <input type="text" id="urlInput" placeholder="https://example.com" />
+    <button onclick="scanURL()">فحص الرابط</button>
+    <div id="result">👆 أدخل الرابط واضغط فحص</div>
+  </div>
+
+  <script>
+    async function scanURL() {
+      const url = document.getElementById("urlInput").value;
+      const resultDiv = document.getElementById("result");
+
+      if (!url) {
+        resultDiv.innerText = "يرجى إدخال رابط أولاً.";
+        return;
+      }
+
+      resultDiv.innerText = "⏳ جاري الفحص...";
+
+      try {
+        const response = await fetch(
+          "https://YOUR_FIREBASE_FUNCTION_URL?url=" + encodeURIComponent(url)
+        );
+        const data = await response.json();
+
+        if (data.data?.attributes?.stats) {
+          const stats = data.data.attributes.stats;
+          resultDiv.innerHTML = `
+            ✅ <b>آمن:</b> ${stats.harmless}<br>
+            ⚠️ <b>مشبوه:</b> ${stats.suspicious}<br>
+            ❌ <b>خطر:</b> ${stats.malicious}<br>
+          `;
+        } else {
+          resultDiv.innerText = "📄 تم إرسال الرابط بنجاح. يرجى الانتظار قليلًا ثم إعادة المحاولة.";
+        }
+      } catch (err) {
+        resultDiv.innerText = "❌ حدث خطأ: " + err.message;
+      }
+    }
+  </script>
+</body>
+</html>

@@ -116,7 +116,7 @@
   <div class="container">
     <h2>🔍 فحص رابط بنظام قنوات السيبراني</h2>
     <input type="text" id="urlInput" placeholder="https://example.com" />
-    <button onclick="scanURL()">فحص الرابط</button>
+    <button onclick="scanURL( )">فحص الرابط</button>
     <div id="result">👆 أدخل الرابط واضغط فحص</div>
   </div>
 
@@ -139,11 +139,11 @@
   <script>
     const API_URL = "https://us-central1-kanawat-cyper.cloudfunctions.net/scanURL";
 
-    async function scanURL() {
+    async function scanURL( ) {
       const url = document.getElementById("urlInput").value.trim();
       const resultDiv = document.getElementById("result");
       const scanButton = document.querySelector("button");
-      const urlRegex = /^(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/;
+      const urlRegex = /^(https?:\/\/(?:www\.|(?!www ))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www ))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})$/;
 
       scanButton.disabled = true;
       resultDiv.innerHTML = ""; // Clear previous results
@@ -151,16 +151,19 @@
       if (!url) {
         resultDiv.innerText = "يرجى إدخال رابط أولاً.";
         scanButton.disabled = false;
+        setTimeout(sendHeightToParent, 100); // Send height after a short delay
         return;
       }
 
       if (!urlRegex.test(url)) {
-        resultDiv.innerText = "❌ يرجى إدخال رابط صحيح (مثل https://example.com).";
+        resultDiv.innerText = "❌ يرجى إدخال رابط صحيح (مثل https://example.com ).";
         scanButton.disabled = false;
+        setTimeout(sendHeightToParent, 100); // Send height after a short delay
         return;
       }
 
       resultDiv.innerHTML = "<span class=\"spinner\"></span> ⏳ جاري إرسال الرابط للفحص...";
+      setTimeout(sendHeightToParent, 100); // Send height after a short delay
 
       let scanId;
 
@@ -172,6 +175,7 @@
           const errorData = JSON.parse(submitText);
           resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${errorData.details?.error?.message || submitText}`;
           scanButton.disabled = false;
+          setTimeout(sendHeightToParent, 100); // Send height after a short delay
           return;
         }
 
@@ -180,14 +184,19 @@
         if (!scanId) {
           resultDiv.innerHTML = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
           scanButton.disabled = false;
+          setTimeout(sendHeightToParent, 100); // Send height after a short delay
           return;
         }
 
-        resultDiv.innerHTML = `<span class=\"spinner\"></span> ✅ تم إرسال الرابط للفحص.<br>🕒 معرف الفحص: ${scanId}<br>يرجى الانتظار...`;
+        resultDiv.innerHTML = `<span class=\"spinner\"></span> ✅ تم إرسال الرابط للفحص.  
+🕒 معرف الفحص: ${scanId}  
+يرجى الانتظار...`;
+        setTimeout(sendHeightToParent, 100); // Send height after a short delay
 
       } catch (err) {
         resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${err.message}`;
         scanButton.disabled = false;
+        setTimeout(sendHeightToParent, 100); // Send height after a short delay
         return;
       }
 
@@ -200,6 +209,7 @@
             const errorData = JSON.parse(raw);
             resultDiv.innerHTML = `❌ خطأ أثناء جلب النتيجة: ${errorData.details?.error?.message || raw}`;
             scanButton.disabled = false;
+            setTimeout(sendHeightToParent, 100); // Send height after a short delay
             return;
           }
 
@@ -209,22 +219,30 @@
           if (status === "completed") {
             const stats = analysisData.data.attributes.stats;
             resultDiv.innerHTML = `
-              ✅ <b>آمن:</b> ${stats.harmless}<br>
-              ⚠️ <b>مشبوه:</b> ${stats.suspicious}<br>
-              ❌ <b>خطر:</b> ${stats.malicious}<br>
+              ✅ <b>آمن:</b> ${stats.harmless}  
+
+              ⚠️ <b>مشبوه:</b> ${stats.suspicious}  
+
+              ❌ <b>خطر:</b> ${stats.malicious}  
+
             `;
             scanButton.disabled = false;
+            setTimeout(sendHeightToParent, 100); // Send height after a short delay
           } else if (status === "queued" || status === "in-progress") {
-            resultDiv.innerHTML = `<span class=\"spinner\"></span> ⌛ الفحص لم يكتمل بعد (${status})...<br>محاولة رقم ${attempt}`;
+            resultDiv.innerHTML = `<span class=\"spinner\"></span> ⌛ الفحص لم يكتمل بعد (${status})...  
+محاولة رقم ${attempt}`;
+            setTimeout(sendHeightToParent, 100); // Send height after a short delay
             setTimeout(() => pollResult(attempt + 1), 3000);
           } else {
             resultDiv.innerHTML = `⚠️ حالة غير معروفة: ${status}`;
             scanButton.disabled = false;
+            setTimeout(sendHeightToParent, 100); // Send height after a short delay
           }
 
         } catch (err) {
           resultDiv.innerHTML = `❌ خطأ أثناء التحليل: ${err.message}`;
           scanButton.disabled = false;
+          setTimeout(sendHeightToParent, 100); // Send height after a short delay
         }
       }
 
@@ -234,18 +252,30 @@
 
     // Function to send height to parent for iframe resizing
     function sendHeightToParent() {
-      const height = document.body.scrollHeight;
+      // Use document.documentElement.scrollHeight for a more reliable height, considering padding and margins
+      const height = document.documentElement.scrollHeight;
       window.parent.postMessage({ frameHeight: height }, '*');
     }
 
     // Send height on load and whenever content might change
-    window.addEventListener('load', sendHeightToParent);
+    window.addEventListener('load', () => {
+      sendHeightToParent();
+      // Send height again after a short delay to account for any late-loading elements
+      setTimeout(sendHeightToParent, 500);
+      // Add a continuous polling mechanism for height updates
+      setInterval(sendHeightToParent, 1000); // Send height every second
+    });
     window.addEventListener('resize', sendHeightToParent);
-    // You might need to call sendHeightToParent after dynamic content changes, e.g., after scan results are displayed
-    const observer = new MutationObserver(sendHeightToParent);
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Use a MutationObserver to detect changes in the DOM and update height
+    const observer = new MutationObserver(() => {
+      sendHeightToParent();
+      // Send height again after a short delay to account for any late-loading elements
+      setTimeout(sendHeightToParent, 500);
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    // Also, ensure height is sent after any dynamic content updates within the scanURL function
 
   </script>
 </body>
 </html>
-

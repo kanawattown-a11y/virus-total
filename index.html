@@ -151,16 +151,19 @@
       if (!url) {
         resultDiv.innerText = "يرجى إدخال رابط أولاً.";
         scanButton.disabled = false;
+        sendHeightToParent(); // Update height after content change
         return;
       }
 
       if (!urlRegex.test(url)) {
         resultDiv.innerText = "❌ يرجى إدخال رابط صحيح (مثل https://example.com).";
         scanButton.disabled = false;
+        sendHeightToParent(); // Update height after content change
         return;
       }
 
       resultDiv.innerHTML = "<span class=\"spinner\"></span> ⏳ جاري إرسال الرابط للفحص...";
+      sendHeightToParent(); // Update height after content change
 
       let scanId;
 
@@ -172,6 +175,7 @@
           const errorData = JSON.parse(submitText);
           resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${errorData.details?.error?.message || submitText}`;
           scanButton.disabled = false;
+          sendHeightToParent(); // Update height after content change
           return;
         }
 
@@ -180,14 +184,17 @@
         if (!scanId) {
           resultDiv.innerHTML = "❌ لم يتم الحصول على معرف الفحص (Scan ID)";
           scanButton.disabled = false;
+          sendHeightToParent(); // Update height after content change
           return;
         }
 
         resultDiv.innerHTML = `<span class=\"spinner\"></span> ✅ تم إرسال الرابط للفحص.<br>🕒 معرف الفحص: ${scanId}<br>يرجى الانتظار...`;
+        sendHeightToParent(); // Update height after content change
 
       } catch (err) {
         resultDiv.innerHTML = `❌ خطأ أثناء الإرسال: ${err.message}`;
         scanButton.disabled = false;
+        sendHeightToParent(); // Update height after content change
         return;
       }
 
@@ -200,6 +207,7 @@
             const errorData = JSON.parse(raw);
             resultDiv.innerHTML = `❌ خطأ أثناء جلب النتيجة: ${errorData.details?.error?.message || raw}`;
             scanButton.disabled = false;
+            sendHeightToParent(); // Update height after content change
             return;
           }
 
@@ -214,17 +222,21 @@
               ❌ <b>خطر:</b> ${stats.malicious}<br>
             `;
             scanButton.disabled = false;
+            sendHeightToParent(); // Update height after content change
           } else if (status === "queued" || status === "in-progress") {
             resultDiv.innerHTML = `<span class=\"spinner\"></span> ⌛ الفحص لم يكتمل بعد (${status})...<br>محاولة رقم ${attempt}`;
+            sendHeightToParent(); // Update height after content change
             setTimeout(() => pollResult(attempt + 1), 3000);
           } else {
             resultDiv.innerHTML = `⚠️ حالة غير معروفة: ${status}`;
             scanButton.disabled = false;
+            sendHeightToParent(); // Update height after content change
           }
 
         } catch (err) {
           resultDiv.innerHTML = `❌ خطأ أثناء التحليل: ${err.message}`;
           scanButton.disabled = false;
+          sendHeightToParent(); // Update height after content change
         }
       }
 
@@ -234,18 +246,20 @@
 
     // Function to send height to parent for iframe resizing
     function sendHeightToParent() {
-      const height = document.body.scrollHeight;
+      // Use document.documentElement.scrollHeight for a more reliable height, considering padding and margins
+      const height = document.documentElement.scrollHeight;
       window.parent.postMessage({ frameHeight: height }, '*');
     }
 
     // Send height on load and whenever content might change
     window.addEventListener('load', sendHeightToParent);
     window.addEventListener('resize', sendHeightToParent);
-    // You might need to call sendHeightToParent after dynamic content changes, e.g., after scan results are displayed
+    // Use a MutationObserver to detect changes in the DOM and update height
     const observer = new MutationObserver(sendHeightToParent);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    // Also, ensure height is sent after any dynamic content updates within the scanURL function
 
   </script>
 </body>
 </html>
-
